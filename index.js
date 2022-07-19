@@ -18,6 +18,8 @@ async function run() {
   try {
     await client.connect();
     const prodcutCollection = client.db("eShop").collection("product");
+    const wishlistCollection = client.db("eShop").collection("cart");
+    const cartCollection = client.db("eShop").collection("wishlist");
 
     // get data by category
 
@@ -66,6 +68,87 @@ async function run() {
       const query = { highlights };
       const topRatedResult = await prodcutCollection.find(query).toArray();
       res.send(topRatedResult);
+    });
+
+    // wishlist products
+    app.post("/post-wishlist", async (req, res) => {
+      const wishlist = req.body;
+      const wishlistRresult = await wishlistCollection.insertOne(wishlist);
+      res.send(wishlistRresult);
+    });
+    app.get("/get-allWishlistdata", async (req, res) => {
+      const cartRresult = await wishlistCollection.find({}).toArray();
+      res.send(cartRresult);
+    });
+    app.delete("/delete-items/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await wishlistCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    app.get("/cart-details/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: ObjectId(id) };
+      const cartRresult = await wishlistCollection.find(filter).toArray();
+      res.send(cartRresult);
+    });
+
+    // cart
+    app.post("/post-cart", async (req, res) => {
+      const cart = req.body;
+      const cartRresult = await cartCollection.insertOne(cart);
+      res.send(cartRresult);
+    });
+    app.get("/get-allcart", async (req, res) => {
+      const result = await cartCollection.find({}).toArray();
+
+      res.send(result);
+    });
+    app.delete("/delete-cartdata/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const filter = { _id: ObjectId(id) };
+      const result = await cartCollection.deleteOne(filter);
+      res.send(result);
+    });
+    app.delete("/delete-cartdata2/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const filter = { _id: ObjectId(id) };
+      const result = await cartCollection.deleteOne(filter);
+      res.send(result);
+    });
+    app.delete("/removeAllItems/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const filter = { _id: ObjectId(id) };
+      const result = await cartCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    // end point for shop page
+
+    app.get("/get-product", async (req, res) => {
+      const prodcut = await prodcutCollection.find({}).toArray();
+      res.send(prodcut);
+    });
+    // app.get("/get-all", async (req, res) => {
+    //   const title = req.query.title;
+    //   const filter = { title };
+    //   const result = await prodcutCollection.find(filter).toArray();
+    //   console.log(result);
+    //   res.send(result);
+    // });
+
+    app.get("/search", async (req, res) => {
+      const bal = req.params.title;
+      prodcutCollection
+        .find({ title: { $regex: bal, $options: "i" } })
+        .then((data) => {
+          res.send(data);
+        });
     });
   } finally {
   }
