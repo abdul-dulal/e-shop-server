@@ -21,7 +21,9 @@ async function run() {
     const wishlistCollection = client.db("eShop").collection("cart");
     const cartCollection = client.db("eShop").collection("wishlist");
     const vendorCollection = client.db("eShop").collection("vendor");
-    const followCollection = client.db("eShop").collection("followers");
+
+    const userCollection = client.db("eShop").collection("userinfo");
+    const reviewCollection = client.db("eShop").collection("review");
 
     // get data by category
 
@@ -82,12 +84,24 @@ async function run() {
     // wishlist products
     app.post("/post-wishlist", async (req, res) => {
       const wishlist = req.body;
-      const wishlistRresult = await wishlistCollection.insertOne(wishlist);
-      res.send(wishlistRresult);
+      const query = {
+        name: wishlist.name,
+        user: wishlist.user,
+      };
+      const exist = await wishlistCollection.findOne(query);
+      if (exist) {
+        return res.send({ success: false });
+      } else {
+        const wishlistRresult = await wishlistCollection.insertOne(wishlist);
+        res.send({ success: true, wishlistRresult });
+      }
     });
     app.get("/get-allWishlistdata", async (req, res) => {
-      const cartRresult = await wishlistCollection.find({}).toArray();
-      res.send(cartRresult);
+      const user = req.query.user;
+
+      const query = { user };
+      const cartRresult = await wishlistCollection.find(query).toArray();
+      res.send(cartRresult.reverse());
     });
     app.delete("/delete-items/:id", async (req, res) => {
       const id = req.params.id;
@@ -113,13 +127,24 @@ async function run() {
     // cart
     app.post("/post-cart", async (req, res) => {
       const cart = req.body;
-      const cartRresult = await cartCollection.insertOne(cart);
-      res.send(cartRresult);
+
+      const query = {
+        name: cart.name,
+        user: cart.user,
+      };
+      const exist = await cartCollection.findOne(query);
+      if (exist) {
+        return res.send({ success: false, exist });
+      } else {
+        const cartRresult = await cartCollection.insertOne(cart);
+        res.send({ success: true, cartRresult });
+      }
     });
     app.get("/get-allcart", async (req, res) => {
-      const result = await cartCollection.find({}).toArray();
-
-      res.send(result);
+      const user = req.query.user;
+      const query = { user };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result.reverse());
     });
     app.delete("/delete-cartdata/:id", async (req, res) => {
       const id = req.params.id;
@@ -162,19 +187,44 @@ async function run() {
       res.send(vendor);
     });
 
-    app.post("/followers", async (req, res) => {
-      const follow = req.body;
+    app.put("/followers/:id", async (req, res) => {
+      const id = req.params.id;
+      const vendor = req.body;
 
-      const followResult = await followCollection.insertOne(follow);
-      res.send(followResult);
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          follower: vendor.follower,
+        },
+      };
+      const result = await vendorCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+
+      res.send(result);
     });
 
     // reviews
+    app.post("/client-Review", async (req, res) => {
+      const review = req.body;
+      const reviewResult = await reviewCollection.insertOne(review);
+      res.send(reviewResult);
+    });
     app.get("/client-Review", async (req, res) => {
-      const isreview = req.query.isreview;
-
-      const query = { isreview };
-      const result = await prodcutCollection.find(query).toArray();
+      const review = await reviewCollection.find({}).toArray();
+      res.send(review);
+    });
+    app.get("/vendorName", async (req, res) => {
+      const reviewName = req.query.reviewName;
+      const query = { reviewName };
+      const result = await reviewCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/review", async (req, res) => {
+      const result = await reviewCollection.find({}).toArray();
       res.send(result);
     });
 
@@ -245,7 +295,40 @@ async function run() {
       const user = req.params.user;
       const filter = { user };
       const result = await vendorCollection.findOne(filter);
+
       res.send(result);
+    });
+
+    app.post("/post-userInfo", async (req, res) => {
+      const user = req.body;
+
+      const userResult = await userCollection.insertOne(user);
+      res.send(userResult);
+    });
+    app.put("/put-userInfo/:id", async (req, res) => {
+      const user = req.body;
+      const id = req.params.id;
+
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          zip: user.zip,
+          address: user.address,
+          country: user.country,
+          state: user.state,
+          city: user.city,
+          user: user.user,
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    });
+    app.get("/get-user/:email", async (req, res) => {
+      const user = req.params.email;
+      const filter = { user };
+      const userResult = await userCollection.findOne(filter);
+      res.send(userResult);
     });
   } finally {
   }
