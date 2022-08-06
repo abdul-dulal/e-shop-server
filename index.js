@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 require("dotenv").config();
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const cors = require("cors");
@@ -21,7 +21,6 @@ async function run() {
     const wishlistCollection = client.db("eShop").collection("cart");
     const cartCollection = client.db("eShop").collection("wishlist");
     const vendorCollection = client.db("eShop").collection("vendor");
-
     const userCollection = client.db("eShop").collection("userinfo");
     const reviewCollection = client.db("eShop").collection("review");
 
